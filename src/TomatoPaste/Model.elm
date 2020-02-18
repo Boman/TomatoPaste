@@ -1,17 +1,19 @@
 module TomatoPaste.Model exposing (..)
 
-import TomatoPaste.Level exposing (..)
-
-
-type FocusElement
-    = PositionFocus Position
-    | FarmFocus Int
-    | UnitFocus Int
-    | NoFocus
+import TomatoPaste.Map exposing (Map, MapPosition)
 
 
 type alias Model =
     { levelContent : String
-    , level : Level
-    , focus : FocusElement
+    , map : Map
+    , gameState : GameState
     }
+
+
+type GameState
+    = NothingSelected
+    | HexSelected MapPosition -- selectedPosition
+    | HexAndBuildingSelected MapPosition Int (List MapPosition) -- selectedPosition buildingType possibleBuildingCells
+    | HexAndUnitSelected MapPosition Int (List MapPosition) -- selectedPosition strength possibleUnitCells
+    | HexWithBuildingSelected MapPosition (List MapPosition) -- selectedPosition protectedCells
+    | HexWithUnitSelected MapPosition (List MapPosition) -- selectedPosition possibleCellsToMove

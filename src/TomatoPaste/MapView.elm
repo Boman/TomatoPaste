@@ -1,11 +1,13 @@
-module TomatoPaste.HexView exposing (..)
+module TomatoPaste.MapView exposing (..)
 
 import Color exposing (..)
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import TomatoPaste.Map exposing (..)
 import TomatoPaste.Messages exposing (..)
+import TomatoPaste.Model exposing (Model)
 
 
 getColor : CellColor -> Color
@@ -39,37 +41,6 @@ getColor playerColor =
             red
 
 
-getColorString : CellColor -> String
-getColorString color =
-    case color of
-        Gray ->
-            "gray"
-
-        Green ->
-            "green"
-
-        Blue ->
-            "blue"
-
-        Red ->
-            "red"
-
-        Yellow ->
-            "yellow"
-
-        Pink ->
-            "pink"
-
-        Purple ->
-            "purple"
-
-        Cyan ->
-            "cyan"
-
-        Color1 ->
-            "pink"
-
-
 isObjectMoving : CellObject -> Bool
 isObjectMoving object =
     case object of
@@ -80,9 +51,9 @@ isObjectMoving object =
             False
 
 
-getObjectImg : Hex -> String
-getObjectImg hex =
-    case hex.cellObject of
+getObjectImg : MapPosition -> Cell -> String
+getObjectImg mapPosition cell =
+    case cell.object of
         NoObject ->
             ""
 
@@ -103,7 +74,7 @@ getObjectImg hex =
 
         Farm ->
             "antiyoy/skins/jannes/field_elements/farm"
-                ++ String.fromInt (modBy 3 (hex.position.x * 179 + hex.position.y * 367) + 1)
+                ++ String.fromInt (modBy 3 (Tuple.first mapPosition * 179 + Tuple.second mapPosition * 367) + 1)
                 ++ ".png"
 
         StrongTower ->
@@ -115,36 +86,45 @@ getObjectImg hex =
                 ++ ".png"
 
 
-viewHex : Hex -> Html Msg
-viewHex hex =
+viewMap : Model -> Html Msg
+viewMap model =
+    div [] [ viewCells model.map.cells ]
+
+
+viewCells : Cells -> Html Msg
+viewCells cells =
+    div [] <| List.map viewCell <| Dict.toList cells
+
+
+viewCell : ( MapPosition, Cell ) -> Html Msg
+viewCell ( mapPosition, cell ) =
     let
         r =
             28
 
         cx =
-            toFloat hex.position.x * 1.5 * r * 0.7
+            toFloat (Tuple.first mapPosition) * 1.5 * r * 0.7
 
         cy =
-            r / 3 ^ 0.5 * toFloat (2 * hex.position.y + modBy 2 hex.position.x)
+            r / 3 ^ 0.5 * toFloat (2 * Tuple.second mapPosition + modBy 2 (Tuple.first mapPosition))
     in
     button
         [ style "position" "absolute"
         , style "top" (String.fromFloat cy ++ "px")
         , style "left" (String.fromFloat cx ++ "px")
-        , style "background-color" (toCssString <| getColor hex.color)
-        , onClick (CellClicked hex.position.x hex.position.y)
+        , style "background-color" (toCssString <| getColor cell.color)
+        , onClick (CellClicked (Tuple.first mapPosition) (Tuple.second mapPosition))
         , style "height" (String.fromFloat r ++ "px")
         , style "width" (String.fromFloat r ++ "px")
         ]
-        [ if hex.cellObject == NoObject then
+        [ if cell.object == NoObject then
             text ""
-            -- ++ (String.fromInt hex.position.x ++ ", " ++ String.fromInt hex.position.y)
 
           else
             img
-                [ src (getObjectImg hex)
+                [ src (getObjectImg mapPosition cell)
                 , class
-                    (if isObjectMoving hex.cellObject then
+                    (if isObjectMoving cell.object then
                         "bounce"
 
                      else

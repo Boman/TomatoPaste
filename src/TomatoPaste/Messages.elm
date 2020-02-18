@@ -7,6 +7,8 @@ type Msg
     = LoadLevel
     | LvlNameChanged String
     | ViewLevel (Result Http.Error String)
-    | HexClicked Int Int
-    | FarmClicked
+    | CellClicked Int Int
+    | BuildingClicked
     | UnitClicked
+    | UndoClicked
+    | EndRoundClicked
