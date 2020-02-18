@@ -1,14 +1,12 @@
 module TomatoPaste.Main exposing (..)
 
 import Browser
-import Debug exposing (log)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import TomatoPaste.Antiyoy.AntiyoyLevels exposing (..)
 import TomatoPaste.GameLogic exposing (..)
-import TomatoPaste.HexView exposing (..)
-import TomatoPaste.Level exposing (..)
+import TomatoPaste.Map exposing (..)
+import TomatoPaste.MapView exposing (..)
 import TomatoPaste.Messages exposing (..)
 import TomatoPaste.Model exposing (..)
 import TomatoPaste.OverlayView exposing (..)
@@ -35,8 +33,8 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
         getLevelString
-        (parseLevelString getLevelString)
-        NoFocus
+        (mapFromLevel <| parseLevelString getLevelString)
+        NothingSelected
     , Cmd.none
     )
 
@@ -54,55 +52,47 @@ update msg model =
             )
 
         LoadLevel ->
-            ( { model | level = parseLevelString model.levelContent }
-            , Cmd.none
-              --Http.get { url = model.levelContent, expect = Http.expectString ViewLevel }
-            )
+            ( model, Cmd.none )
 
-        ViewLevel result ->
-            case result of
-                Ok levelFile ->
-                    ( { model | level = parseLevelString (log "levelString" (parseLevelFile (log "levelFile" levelFile))) }
-                    , Cmd.none
-                    )
+        ViewLevel _ ->
+            ( model, Cmd.none )
 
-                Err _ ->
-                    ( model
-                    , Cmd.none
-                    )
+        CellClicked x y ->
+            ( cellClicked model ( x, y ), Cmd.none )
 
-        HexClicked x y ->
-            ( hexClicked model (Position x y), Cmd.none )
-
-        FarmClicked ->
-            ( { model
-                | focus =
-                    FarmFocus
-                        (case model.focus of
-                            FarmFocus int ->
-                                modBy 3 (int + 1)
-
-                            _ ->
-                                0
-                        )
-              }
-            , Cmd.none
-            )
+        BuildingClicked ->
+            --            case model.gameState of
+            --                HexAndBuildingSelected position buildingType ->
+            --                    ( { model | gameState = HexAndBuildingSelected position (modBy 3 (buildingType + 1)) }, Cmd.none )
+            --
+            --                HexSelected position ->
+            --                    ( { model | gameState = HexAndBuildingSelected position 0 }, Cmd.none )
+            --
+            --                HexAndUnitSelected position _ ->
+            --                    ( { model | gameState = HexAndBuildingSelected position 0 }, Cmd.none )
+            --
+            --                _ ->
+            ( model, Cmd.none )
 
         UnitClicked ->
-            ( { model
-                | focus =
-                    UnitFocus
-                        (case model.focus of
-                            UnitFocus int ->
-                                modBy 4 (int + 1)
+            --            case model.gameState of
+            --                HexAndUnitSelected position strength ->
+            --                    ( { model | gameState = HexAndUnitSelected position (modBy 4 (strength + 1)) }, Cmd.none )
+            --
+            --                HexSelected position ->
+            --                    ( { model | gameState = HexAndUnitSelected position 0 }, Cmd.none )
+            --
+            --                HexAndBuildingSelected position _ ->
+            --                    ( { model | gameState = HexAndUnitSelected position 0 }, Cmd.none )
+            --
+            --                _ ->
+            ( model, Cmd.none )
 
-                            _ ->
-                                0
-                        )
-              }
-            , Cmd.none
-            )
+        UndoClicked ->
+            ( model, Cmd.none )
+
+        EndRoundClicked ->
+            ( model, Cmd.none )
 
 
 
@@ -120,19 +110,14 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ style "font-family" "\"Arial Black\", Gadget, sans-serif" ]
         [ div []
-            [ input
-                [ placeholder model.levelContent
-                , value model.levelContent
-                , onInput LvlNameChanged
-                ]
-                []
-            , button [ onClick LoadLevel ] [ text "load Level" ]
-            , div [] [ viewOverlay model ]
+            [-- input [ placeholder model.levelContent, value model.levelContent, onInput LvlNameChanged ] []
+             --, button [ onClick LoadLevel ] [ text "load Level" ]
             ]
+        , div [] [ viewOverlay model ]
         , div [ style "position" "absolute" ]
             [ node "link" [ rel "stylesheet", href "HexView.css" ] []
-            , div [] (List.map viewHex model.level.hexes)
+            , viewMap model
             ]
         ]
